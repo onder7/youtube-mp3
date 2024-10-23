@@ -50,100 +50,142 @@ class MusicManager {
         }
     }
 
-    public function downloadMusic($url) {
-        try {
-            // YouTube URL'sini doğrula
-            if (!filter_var($url, FILTER_VALIDATE_URL)) {
-                throw new Exception("Geçersiz URL formatı");
-            }
+    // public function downloadMusic($url) {
+    //     try {
+    //         // YouTube URL'sini doğrula
+    //         if (!filter_var($url, FILTER_VALIDATE_URL)) {
+    //             throw new Exception("Geçersiz URL formatı");
+    //         }
 
-            // Önce URL'nin daha önce indirilip indirilmediğini kontrol et
-            $stmt = $this->db->prepare("SELECT * FROM downloads WHERE youtube_url = ?");
-            $stmt->bind_param("s", $url);
-            $stmt->execute();
-            $result = $stmt->get_result();
+    //         // Önce URL'nin daha önce indirilip indirilmediğini kontrol et
+    //         $stmt = $this->db->prepare("SELECT * FROM downloads WHERE youtube_url = ?");
+    //         $stmt->bind_param("s", $url);
+    //         $stmt->execute();
+    //         $result = $stmt->get_result();
 
-            if ($result->num_rows > 0) {
-                $song = $result->fetch_assoc();
-                return [
-                    'success' => true,
-                    'message' => 'Bu şarkı zaten indirilmiş',
-                    'file' => $song['file_path'],
-                    'title' => $song['title'],
-                    'id' => $song['id']
-                ];
-            }
+    //         if ($result->num_rows > 0) {
+    //             $song = $result->fetch_assoc();
+    //             return [
+    //                 'success' => true,
+    //                 'message' => 'Bu şarkı zaten indirilmiş',
+    //                 'file' => $song['file_path'],
+    //                 'title' => $song['title'],
+    //                 'id' => $song['id']
+    //             ];
+    //         }
 
-            // Video bilgilerini al
-            $command = "yt-dlp --print title --print duration --no-playlist \"$url\"";
-            exec($command, $info, $returnCode);
+    //         // Video bilgilerini al
+    //         $command = "yt-dlp --print title --print duration --no-playlist \"$url\"";
+    //         exec($command, $info, $returnCode);
 
-            if ($returnCode !== 0 || empty($info)) {
-                throw new Exception("Video bilgileri alınamadı");
-            }
+    //         if ($returnCode !== 0 || empty($info)) {
+    //             throw new Exception("Video bilgileri alınamadı");
+    //         }
 
-            $title = $info[0] ?? 'Unknown Title';
-            $duration = $info[1] ?? '0:00';
+    //         $title = $info[0] ?? 'Unknown Title';
+    //         $duration = $info[1] ?? '0:00';
 
-            // Dosya adını temizle
-            $safeTitle = $this->sanitizeFileName($title);
-            $outputFile = $this->downloadPath . $safeTitle . '.mp3';
+    //         // Dosya adını temizle
+    //         $safeTitle = $this->sanitizeFileName($title);
+    //         $outputFile = $this->downloadPath . $safeTitle . '.mp3';
 
-            // Şarkıyı indir
-            $command = sprintf(
-                'yt-dlp -x --audio-format mp3 --output "%s.%%(ext)s" "%s"',
-                $this->downloadPath . $safeTitle,
-                $url
-            );
+    //         // Şarkıyı indir
+    //         $command = sprintf(
+    //             'yt-dlp -x --audio-format mp3 --output "%s.%%(ext)s" "%s"',
+    //             $this->downloadPath . $safeTitle,
+    //             $url
+    //         );
 
-            exec($command . " 2>&1", $output, $returnCode);
+    //         exec($command . " 2>&1", $output, $returnCode);
 
-            if ($returnCode !== 0) {
-                throw new Exception("İndirme başarısız: " . implode("\n", $output));
-            }
+    //         if ($returnCode !== 0) {
+    //             throw new Exception("İndirme başarısız: " . implode("\n", $output));
+    //         }
 
-            // Dosya boyutunu al
-            $fileSize = filesize($outputFile);
+    //         // Dosya boyutunu al
+    //         $fileSize = filesize($outputFile);
 
-            // Veritabanına kaydet
-            $stmt = $this->db->prepare(
-                "INSERT INTO downloads (title, youtube_url, file_path, file_size, duration) 
-                 VALUES (?, ?, ?, ?, ?)"
-            );
+    //         // Veritabanına kaydet
+    //         $stmt = $this->db->prepare(
+    //             "INSERT INTO downloads (title, youtube_url, file_path, file_size, duration) 
+    //              VALUES (?, ?, ?, ?, ?)"
+    //         );
 
-            $fileName = basename($outputFile);
-            $stmt->bind_param(
-                "sssis",
-                $title,
-                $url,
-                $fileName,
-                $fileSize,
-                $duration
-            );
+    //         $fileName = basename($outputFile);
+    //         $stmt->bind_param(
+    //             "sssis",
+    //             $title,
+    //             $url,
+    //             $fileName,
+    //             $fileSize,
+    //             $duration
+    //         );
 
-            if (!$stmt->execute()) {
-                throw new Exception("Veritabanı kaydı başarısız");
-            }
+    //         if (!$stmt->execute()) {
+    //             throw new Exception("Veritabanı kaydı başarısız");
+    //         }
 
-            $downloadId = $this->db->insert_id;
+    //         $downloadId = $this->db->insert_id;
 
+    //         return [
+    //             'success' => true,
+    //             'message' => 'İndirme başarılı',
+    //             'file' => $fileName,
+    //             'title' => $title,
+    //             'id' => $downloadId
+    //         ];
+
+    //     } catch (Exception $e) {
+    //         error_log("Download error: " . $e->getMessage());
+    //         return [
+    //             'success' => false,
+    //             'error' => $e->getMessage()
+    //         ];
+    //     }
+    // }
+
+    
+
+// MusicManager.php içindeki downloadMusic metodunu güncelle
+
+public function downloadMusic($url) {
+    try {
+        // URL kontrolü
+        if (!filter_var($url, FILTER_VALIDATE_URL)) {
+            throw new Exception("Geçersiz URL formatı");
+        }
+
+        // URL'nin daha önce indirilip indirilmediğini kontrol et
+        $stmt = $this->db->prepare("SELECT * FROM downloads WHERE youtube_url = ?");
+        $stmt->bind_param("s", $url);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        if ($result->num_rows > 0) {
+            $song = $result->fetch_assoc();
             return [
                 'success' => true,
-                'message' => 'İndirme başarılı',
-                'file' => $fileName,
-                'title' => $title,
-                'id' => $downloadId
-            ];
-
-        } catch (Exception $e) {
-            error_log("Download error: " . $e->getMessage());
-            return [
-                'success' => false,
-                'error' => $e->getMessage()
+                'message' => 'Bu şarkı zaten indirilmiş',
+                'file' => $song['file_path'],
+                'title' => $song['title'],
+                'id' => $song['id']
             ];
         }
-    }
 
+        // Kuyruğa ekle
+        $queueProcessor = new QueueProcessor();
+        return $queueProcessor->addToQueue($url);
+
+    } catch (Exception $e) {
+        error_log("Download error: " . $e->getMessage());
+        return [
+            'success' => false,
+            'error' => $e->getMessage()
+        ];
+    }
+}
+    
+    
     public function getSongById($id) {
         $stmt = $this->db->prepare("SELECT * FROM downloads WHERE id = ?");
         $stmt->bind_param("i", $id);

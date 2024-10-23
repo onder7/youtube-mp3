@@ -1,15 +1,12 @@
 <?php
-// download.php
 header('Content-Type: application/json');
 require_once 'MusicManager.php';
 
 try {
     $manager = new MusicManager();
 
-    // İndirme isteği
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['url'])) {
-        $result = $manager->downloadMusic($_POST['url']);
-        echo json_encode($result);
+        echo $manager->downloadMusic($_POST['url']);
         exit;
     }
 
@@ -32,16 +29,20 @@ try {
                 exit;
             }
         }
+        
+        echo json_encode([
+            'success' => false,
+            'error' => 'Dosya bulunamadı'
+        ]);
+        exit;
     }
 
-    // Hatalı istek
     echo json_encode([
         'success' => false,
         'error' => 'Geçersiz istek'
     ]);
 
-} 
-catch (Exception $e) {
+} catch (Exception $e) {
     echo json_encode([
         'success' => false,
         'error' => $e->getMessage()
