@@ -1,44 +1,216 @@
-youtube-mp3
-Bu uygulama, müzik ve şarkı sözleri yönetimi üzerine odaklanmış bir sistemdir. LyricsScraper.php ile web sitelerinden şarkı sözlerini otomatik olarak toplayarak, bu sözleri kullanıcıya sunma yeteneği sağlar. MusicManager.php, müzik dosyalarının yönetimi için bir arayüz sunar; kullanıcılar müzik dosyalarını ekleyebilir, düzenleyebilir, silebilir ve görüntüleyebilir. download.php ise sunucu üzerinden dosya indirimi gerçekleştirmek için kullanılır. Bu sistem, hem şarkı sözleri hem de müzik dosyalarını kolayca yönetebilmek ve organize edebilmek için kapsamlı bir çözüm sunar.
+# YouTube MP3 & Lyrics Manager
 
-This application is a system focused on music and lyrics management. With LyricsScraper.php, it automatically scrapes song lyrics from websites and presents them to the user. MusicManager.php provides an interface for managing music files, allowing users to add, edit, delete, and view music files. download.php is used to facilitate file downloads from the server. This system offers a comprehensive solution for efficiently managing and organizing both song lyrics and music files.
+![Version](https://img.shields.io/badge/versiyon-1.0.0-blue)
+![PHP](https://img.shields.io/badge/PHP-7.4+-green)
+![MySQL](https://img.shields.io/badge/MySQL-5.7+-orange)
+![License](https://img.shields.io/badge/lisans-MIT-red)
 
-Gerekli paketleri yükleyin composer require norkunas/youtube-dl-php
+<div align="center">
 
-Kurulum adımları:
+![YouTube MP3 & Lyrics Manager](images/screenshot.png)
 
-yt-dlp'yi yükleyin: Windows için:
+*Müzik ve Şarkı Sözleri Yönetim Sistemi*
 
-https://github.com/yt-dlp/yt-dlp/releases adresinden yt-dlp.exe'yi indirin Bu dosyayı C:\Windows\System32 klasörüne kopyalayın Kontrol : yt-dlp --version
+</div>
 
-FFmpeg'i yükleyin: Windows için: https://www.gyan.dev/ffmpeg/builds/ adresinden FFmpeg'i indirin Zip dosyasını açın bin klasöründeki üç exe dosyasını (ffmpeg.exe, ffprobe.exe, ffplay.exe) C:\Windows\System32 klasörüne kopyalayın Kontrol :ffmpeg-check.php
+## ⚠️ Önemli Not
+> [!WARNING]
+> YouTube'dan video indirirken telif hakları konusunda dikkatli olun ve sadece izin verilen içerikleri indirin.
 
-Kurulum başarısız olursa:
+## 📋 Genel Bakış
+Bu uygulama, müzik indirme ve şarkı sözleri yönetimi için geliştirilmiş kapsamlı bir sistemdir. YouTube'dan müzik indirme, şarkı sözleri toplama ve müzik dosyası yönetimi özelliklerini tek bir platformda birleştirir.
 
-Antivirüs programınızın engellemiş olabilir:
+## ✨ Temel Özellikler
+- ✅ YouTube'dan MP3 dönüşümü
+- ✅ Otomatik şarkı sözü toplama
+- ✅ Müzik dosyası yönetimi
+- ✅ Şarkı sözü veritabanı
+- ✅ Gelişmiş arama
+- ✅ Çoklu dil desteği
 
-Antivirüs programınızı geçici olarak devre dışı bırakın Kurulumu tekrar deneyin
+## 🚀 Kurulum Adımları
 
-Yönetici izinleri:
+### 1️⃣ Sistem Gereksinimleri
+```plaintext
+- PHP 7.4+
+- MySQL 5.7+
+- Apache/Nginx
+- FFmpeg
+- yt-dlp
+```
 
-Command Prompt'u yönetici olarak çalıştırın copy yt-dlp.exe C:\Windows\System32 komutunu kullanın
+### 2️⃣ Composer Paketleri
+```bash
+composer require norkunas/youtube-dl-php
+```
 
-Alternatif kurulum yolu:
+### 3️⃣ Gerekli Yazılımların Kurulumu
 
-$command = ".\yt-dlp.exe -x --audio-format mp3 -o "$output" "$url"";
+#### yt-dlp Kurulumu (Windows)
+1. [yt-dlp.exe'yi indirin](https://github.com/yt-dlp/yt-dlp/releases)
+2. `C:\Windows\System32` klasörüne kopyalayın
+3. Kontrol:
+```bash
+yt-dlp --version
+```
 
-Müzik ve şarkı sözleri için bir veritabanı yapısı oluşturalım. -- music_db.sql CREATE TABLE downloads ( id INT AUTO_INCREMENT PRIMARY KEY, title VARCHAR(255) NOT NULL, artist VARCHAR(255), youtube_url VARCHAR(255) NOT NULL, file_path VARCHAR(255) NOT NULL, download_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP, file_size INT, duration VARCHAR(10), download_count INT DEFAULT 0 );
+#### FFmpeg Kurulumu (Windows)
+1. [FFmpeg'i indirin](https://www.gyan.dev/ffmpeg/builds/)
+2. Zip'i açın
+3. Şu dosyaları `C:\Windows\System32`'ye kopyalayın:
+   - ffmpeg.exe
+   - ffprobe.exe
+   - ffplay.exe
 
-CREATE TABLE lyrics ( id INT AUTO_INCREMENT PRIMARY KEY, download_id INT, lyrics_text TEXT, language VARCHAR(50), source VARCHAR(255), added_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (download_id) REFERENCES downloads(id) ON DELETE CASCADE );
+### 4️⃣ Veritabanı Kurulumu
 
--- İndeks ekleyelim CREATE INDEX idx_youtube_url ON downloads(youtube_url); CREATE INDEX idx_download_id ON lyrics(download_id);
+```sql
+-- Veritabanı oluşturma
+CREATE DATABASE music_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-Özellikler:
+-- İndirmeler tablosu
+CREATE TABLE downloads (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    artist VARCHAR(255),
+    youtube_url VARCHAR(255) NOT NULL,
+    file_path VARCHAR(255) NOT NULL,
+    download_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    file_size INT,
+    duration VARCHAR(10),
+    download_count INT DEFAULT 0
+);
 
-YouTube videolarından MP3 dönüşümü Yüksek kalitede ses İndirilen dosyalar listesi Kolay kullanımlı arayüz İlerleme göstergesi Hata yönetimi
+-- Şarkı sözleri tablosu
+CREATE TABLE lyrics (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    download_id INT,
+    lyrics_text TEXT,
+    language VARCHAR(50),
+    source VARCHAR(255),
+    added_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (download_id) REFERENCES downloads(id) ON DELETE CASCADE
+);
 
-Güvenlik önlemleri:
+-- İndeksler
+CREATE INDEX idx_youtube_url ON downloads(youtube_url);
+CREATE INDEX idx_download_id ON lyrics(download_id);
+```
 
-İndirilen dosyaların boyut kontrolü Dosya türü doğrulaması URL doğrulaması Rate limiting
+## 📦 Proje Yapısı
 
-Not: YouTube'dan video indirirken telif hakları konusunda dikkatli olun ve sadece izin verilen içerikleri indirin.
+```plaintext
+youtube-mp3/
+├── src/
+│   ├── LyricsScraper.php
+│   ├── MusicManager.php
+│   └── download.php
+├── config/
+│   ├── database.php
+│   └── config.php
+├── public/
+│   ├── index.php
+│   └── assets/
+└── templates/
+    └── views/
+```
+
+## 💻 Kullanım Örnekleri
+
+### Müzik İndirme
+```php
+$manager = new MusicManager();
+$result = $manager->downloadFromYoutube('https://www.youtube.com/watch?v=VIDEO_ID');
+```
+
+### Şarkı Sözü Toplama
+```php
+$scraper = new LyricsScraper();
+$lyrics = $scraper->scrapeLyrics($songTitle, $artist);
+```
+
+## 🛡️ Güvenlik Önlemleri
+
+> [!IMPORTANT]
+> ### Uygulanan Kontroller
+> - Dosya boyutu limitleri
+> - Mime type kontrolü
+> - URL doğrulaması
+> - Rate limiting
+> - SQL injection koruması
+> - XSS koruması
+
+## 🔧 Yapılandırma
+
+### config.php
+```php
+return [
+    'download_path' => '/downloads',
+    'max_file_size' => 20 * 1024 * 1024, // 20MB
+    'allowed_formats' => ['mp3', 'wav'],
+    'rate_limit' => 10 // requests per minute
+];
+```
+
+## 📊 Veritabanı Şeması
+
+### Downloads Tablosu
+| Alan          | Tür      | Açıklama                    |
+|---------------|----------|----------------------------|
+| id            | INT      | Otomatik artan birincil anahtar |
+| title         | VARCHAR  | Şarkı başlığı               |
+| artist        | VARCHAR  | Sanatçı adı                 |
+| youtube_url   | VARCHAR  | YouTube video URL'si        |
+
+### Lyrics Tablosu
+| Alan          | Tür      | Açıklama                    |
+|---------------|----------|----------------------------|
+| id            | INT      | Otomatik artan birincil anahtar |
+| download_id   | INT      | İndirme referansı           |
+| lyrics_text   | TEXT     | Şarkı sözleri               |
+| language      | VARCHAR  | Dil bilgisi                 |
+
+## 🐛 Sorun Giderme
+
+### Sık Karşılaşılan Hatalar
+
+1. **FFmpeg Hatası**
+```bash
+# FFmpeg kurulumunu kontrol edin
+ffmpeg -version
+```
+
+2. **Veritabanı Bağlantı Hatası**
+```php
+// PDO bağlantısını test edin
+try {
+    $pdo = new PDO($dsn, $user, $pass);
+} catch (PDOException $e) {
+    echo $e->getMessage();
+}
+```
+
+## 📱 İletişim ve Destek
+- 📧 E-posta: [onder7@gmail.com]
+- 🌐 GitHub: [github.com/onder7]
+- 💬 Discord: [discord.gg/musicmanager]
+
+## ⚖️ Lisans
+Bu proje MIT lisansı altında lisanslanmıştır.
+
+## 🤝 Katkıda Bulunma
+1. Fork edin
+2. Feature branch oluşturun
+3. Değişikliklerinizi commit edin
+4. Branch'inizi push edin
+5. Pull Request oluşturun
+
+---
+
+<div align="center">
+
+**..:: Onder Monder ::..**
+
+*Profesyonel IT Çözümleri*
+
+</div>
